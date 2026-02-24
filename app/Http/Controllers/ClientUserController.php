@@ -8,6 +8,7 @@ use App\Http\Services\UserService;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class ClientUserController extends Controller
@@ -22,7 +23,8 @@ class ClientUserController extends Controller
         $search = $request->string('search')->toString();
         $perPage = (int) $request->input('per_page', 10);
 
-        $users = $this->repo->paginateClients($search, $perPage);
+        // ✅ HIDE CURRENTLY LOGGED-IN USER FROM TABLE
+        $users = $this->repo->paginateClients($search, $perPage, Auth::id());
 
         return Inertia::render('ClientUsers/Index', [
             'filters' => [
@@ -43,8 +45,11 @@ class ClientUserController extends Controller
 
     public function show(User $user)
     {
-        // ✅ safety: allow only client users on this module
-        abort_unless($user->role === 'client', 404);
+        // ✅ allow only client/registrar
+        abort_unless(in_array($user->role, ['client', 'registrar']), 404);
+
+        // ✅ SAFETY: prevent viewing own account via URL
+        abort_if(Auth::id() === $user->id, 403);
 
         return Inertia::render('ClientUsers/Show', [
             'user' => new UserResource($user),
@@ -55,34 +60,40 @@ class ClientUserController extends Controller
     {
         $data = $request->validated();
 
-        // ✅ enforce client-only creation on this module
-        $data['role'] = 'client';
+        // ✅ keep role from request; default to client if missing
+        $data['role'] = $data['role'] ?? 'client';
 
         $this->service->store($data);
 
-        return back()->with('success', 'Client user created.');
+        return back()->with('success', 'User created.');
     }
 
     public function update(UpsertUserRequest $request, User $user)
     {
-        abort_unless($user->role === 'client', 404);
+        abort_unless(in_array($user->role, ['client', 'registrar']), 404);
+
+        // ✅ SAFETY: prevent updating own account via URL
+        abort_if(Auth::id() === $user->id, 403);
 
         $data = $request->validated();
 
-        // ✅ enforce client-only update on this module
-        $data['role'] = 'client';
+        // ✅ keep role from request; fallback to current role if missing
+        $data['role'] = $data['role'] ?? $user->role;
 
         $this->service->update($user, $data);
 
-        return back()->with('success', 'Client user updated.');
+        return back()->with('success', 'User updated.');
     }
 
     public function destroy(User $user)
     {
-        abort_unless($user->role === 'client', 404);
+        abort_unless(in_array($user->role, ['client', 'registrar']), 404);
+
+        // ✅ SAFETY: prevent deleting own account via URL
+        abort_if(Auth::id() === $user->id, 403);
 
         $this->repo->delete($user);
 
-        return back()->with('success', 'Client user deleted.');
+        return back()->with('success', 'User deleted.');
     }
 }

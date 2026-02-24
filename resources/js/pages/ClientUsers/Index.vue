@@ -6,32 +6,26 @@ import { computed, ref, watch } from 'vue'
 // shadcn-vue
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-import clientUsersLink from '@/routes/clients/users' // wayfinder output
+import clientUsersLink from '@/routes/clients/users'
 
-type UserRole = 'client' | 'registrar' | 'super_admin'
+type UserRole = 'client' | 'registrar'
 
 type UserRow = {
   id: number
   name: string
   email: string
-  role: UserRole
+  role: UserRole | 'super_admin' // safe if old data exists
   created_at: string | null
 }
 
 const props = defineProps<{
   filters: { search: string; per_page: number }
   users: {
-    data: { data: UserRow[] } // UserResource::collection
+    data: { data: UserRow[] } // UserResource::collection(...) returns { data: [] }
     current_page: number
     last_page: number
     per_page: number
@@ -41,7 +35,8 @@ const props = defineProps<{
   }
 }>()
 
-const rows = computed(() => props.users.data.data)
+// ✅ FIX: users.data is already { data: [...] } so don't do .data.data
+const rows = computed<UserRow[]>(() => props.users?.data?.data ?? [])
 
 const search = ref(props.filters.search ?? '')
 const perPage = ref<number>(props.filters.per_page ?? 10)
@@ -78,7 +73,7 @@ function openEdit(u: UserRow) {
   form.email = u.email
   form.password = ''
   form.password_confirmation = ''
-  form.role = u.role
+  form.role = (u.role === 'super_admin' ? 'registrar' : u.role) as UserRole
   open.value = true
 }
 
@@ -110,7 +105,6 @@ function destroyUser(u: UserRow) {
 }
 
 function viewUser(u: UserRow) {
-  // ✅ FIX: no wayfinder show yet, use direct url
   router.get(`/clients/users/${u.id}`)
 }
 
@@ -169,7 +163,9 @@ const flash = computed(() => (usePage().props as any).flash)
             <TableRow v-for="u in rows" :key="u.id">
               <TableCell class="font-medium">{{ u.name }}</TableCell>
               <TableCell>{{ u.email }}</TableCell>
-              <TableCell class="capitalize">{{ u.role.replace('_', ' ') }}</TableCell>
+              <TableCell class="capitalize">
+                {{ (u.role === 'super_admin' ? 'registrar' : u.role).replace('_', ' ') }}
+              </TableCell>
               <TableCell class="text-right space-x-2">
                 <Button variant="secondary" size="sm" @click="viewUser(u)">View</Button>
                 <Button variant="outline" size="sm" @click="openEdit(u)">Edit</Button>
@@ -257,7 +253,6 @@ const flash = computed(() => (usePage().props as any).flash)
                 <SelectContent>
                   <SelectItem value="client">Client</SelectItem>
                   <SelectItem value="registrar">Registrar</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
                 </SelectContent>
               </Select>
               <p v-if="form.errors.role" class="text-sm text-destructive">{{ form.errors.role }}</p>
