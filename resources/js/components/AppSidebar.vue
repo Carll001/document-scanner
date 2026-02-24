@@ -31,8 +31,8 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Manage Client',
-        href: clientUsers.index(), // ✅ /clients/users
+        title: 'Manage Users',
+        href: clientUsers.index(), 
         icon: Users,
     },
 ];

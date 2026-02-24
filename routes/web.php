@@ -17,15 +17,12 @@ Route::get('/', function () {
 // })->middleware(['auth', 'verified'])->name('dashboard');
 
 
-Route::middleware('auth')->group(function(){
-    Route::get('dashboard', function(){
+Route::middleware('auth')->group(function () {
+    Route::get('dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
-   Route::middleware(['verified'])
-    ->prefix('clients/users')
-    ->name('clients.users.')
-    ->group(function () {
+    Route::prefix('clients/users')->name('clients.users.')->group(function () {
         Route::get('/', [ClientUserController::class, 'index'])->name('index');
         Route::get('/{user}', [ClientUserController::class, 'show'])->name('show'); // ✅ must exist
         Route::post('/', [ClientUserController::class, 'store'])->name('store');
@@ -34,7 +31,7 @@ Route::middleware('auth')->group(function(){
     });
 
 
-    Route::prefix('afs')->name('afs.')->group(function() {
+    Route::prefix('afs')->name('afs.')->group(function () {
         Route::get('/', [AfsController::class, 'index'])->name('index');
         Route::get('/create', [AfsController::class, 'create'])->name('create');
         Route::post('/', [AfsController::class, 'store'])->name('store');
@@ -43,10 +40,8 @@ Route::middleware('auth')->group(function(){
         Route::get('/{afs}/edit', [AfsController::class, 'edit'])->name('edit');
         Route::patch('/{afs}', [AfsController::class, 'update'])->name('update');
         Route::delete('/{afs}', [AfsController::class, 'destroy'])->name('destroy');
-        
     });
 });
 
 
-
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
