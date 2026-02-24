@@ -16,11 +16,17 @@ import {
 import { type NavItem } from '@/types';
 import AppLogo from './AppLogo.vue';
 import { dashboard } from '@/routes';
+import afs from '@/routes/afs';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Afs Scanner',
+        href: afs.index(),
         icon: LayoutGrid,
     },
 ];
