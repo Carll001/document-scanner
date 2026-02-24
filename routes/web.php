@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AfsController;
+use App\Http\Controllers\ClientUserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -20,6 +21,17 @@ Route::middleware('auth')->group(function(){
     Route::get('dashboard', function(){
         return Inertia::render('Dashboard');
     })->name('dashboard');
+
+   Route::middleware(['verified'])
+    ->prefix('clients/users')
+    ->name('clients.users.')
+    ->group(function () {
+        Route::get('/', [ClientUserController::class, 'index'])->name('index');
+        Route::get('/{user}', [ClientUserController::class, 'show'])->name('show'); // ✅ must exist
+        Route::post('/', [ClientUserController::class, 'store'])->name('store');
+        Route::put('/{user}', [ClientUserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [ClientUserController::class, 'destroy'])->name('destroy');
+    });
 
 
     Route::prefix('afs')->name('afs.')->group(function() {
