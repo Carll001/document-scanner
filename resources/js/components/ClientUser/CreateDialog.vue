@@ -20,6 +20,7 @@ import SelectTrigger from '../ui/select/SelectTrigger.vue';
 import SelectValue from '../ui/select/SelectValue.vue';
 import clients from '@/routes/clients';
 import { toast } from 'vue-sonner';
+import Label from '../ui/label/Label.vue';
 
 const closeModal = ref(false);
 
@@ -50,24 +51,25 @@ const handleClose = () => {
 <template>
     <Dialog v-model:open="closeModal">
         <DialogTrigger>
-            <Button>Create</Button>
+            <Button size="sm">Create</Button>
         </DialogTrigger>
-        <DialogContent @interact-outside="handleClose">
+        <DialogContent @interact-outside="handleClose" class="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Create Client User</DialogTitle>
-                <DialogDescription>
+                <DialogTitle class="text-lg font-semibold">Create Client User</DialogTitle>
+                <DialogDescription class="text-sm text-gray-500">
                     Fill in the details to create a new user.
                 </DialogDescription>
             </DialogHeader>
-            <form @submit.prevent="submit" class="space-y-4">
+            <form @submit.prevent="submit" class="space-y-5 py-3">
                 <section>
-                    <div class="space-y-1">
+                    <div class="space-y-1.5">
                         <label for="name" class="text-sm font-medium">Name</label>
                         <Input
                             id="name"
                             v-model="form.name"
                             placeholder="Full Name"
                             :aria-invalid="!!form.errors.name"
+                            class="w-full"
                         />
                         <p v-if="form.errors.name" class="text-sm text-red-500">
                             {{ form.errors.name }}
@@ -75,7 +77,7 @@ const handleClose = () => {
                     </div>
                 </section>
                 <section>
-                    <div class="space-y-1">
+                    <div class="space-y-1.5">
                         <label for="email" class="text-sm font-medium">Email</label>
                         <Input
                             id="email"
@@ -83,6 +85,7 @@ const handleClose = () => {
                             type="email"
                             placeholder="Email"
                             :aria-invalid="!!form.errors.email"
+                            class="w-full"
                         />
                         <p v-if="form.errors.email" class="text-sm text-red-500">
                             {{ form.errors.email }}
@@ -90,7 +93,7 @@ const handleClose = () => {
                     </div>
                 </section>
                 <section>
-                    <div class="space-y-1">
+                    <div class="space-y-1.5">
                         <label for="password" class="text-sm font-medium">Password</label>
                         <Input
                             id="password"
@@ -98,6 +101,7 @@ const handleClose = () => {
                             type="password"
                             placeholder="Password"
                             :aria-invalid="!!form.errors.password"
+                            class="w-full"
                         />
                         <p v-if="form.errors.password" class="text-sm text-red-500">
                             {{ form.errors.password }}
@@ -105,7 +109,7 @@ const handleClose = () => {
                     </div>
                 </section>
                 <section>
-                    <div class="space-y-1">
+                    <div class="space-y-1.5">
                         <label for="password_confirmation" class="text-sm font-medium">Confirm Password</label>
                         <Input
                             id="password_confirmation"
@@ -113,6 +117,7 @@ const handleClose = () => {
                             type="password"
                             placeholder="Confirm Password"
                             :aria-invalid="!!form.errors.password_confirmation"
+                            class="w-full"
                         />
                         <p v-if="form.errors.password_confirmation" class="text-sm text-red-500">
                             {{ form.errors.password_confirmation }}
@@ -120,10 +125,10 @@ const handleClose = () => {
                     </div>
                 </section>
                 <section>
-                    <div class="space-y-1">
+                    <div class="space-y-1.5">
                         <label for="role" class="text-sm font-medium">Role</label>
                         <Select v-model="form.role">
-                            <SelectTrigger id="role" :aria-invalid="!!form.errors.role">
+                            <SelectTrigger id="role" :aria-invalid="!!form.errors.role" class="w-full">
                                 <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
@@ -141,12 +146,12 @@ const handleClose = () => {
                     </div>
                 </section>
 
-                <DialogFooter>
+                <DialogFooter class="gap-2 pt-2">
                     <DialogClose>
                         <Button type="button" variant="outline" @click="handleClose">Close</Button>
                     </DialogClose>
                     <Button type="submit" :disabled="form.processing">
-                        {{ form.processing? 'Creating..' : 'Create' }}
+                        {{ form.processing ? 'Creating...' : 'Create' }}
                     </Button>
                 </DialogFooter>
             </form>

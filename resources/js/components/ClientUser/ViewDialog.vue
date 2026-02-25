@@ -10,6 +10,7 @@ import {
     DialogTitle,
 } from '../ui/dialog';
 import Button from '../ui/button/Button.vue';
+import Label from '../ui/label/Label.vue';
 
 interface Props {
     userId: number;
@@ -19,51 +20,51 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{
-    close: [];
-}>();
+const emit = defineEmits<{ close: [] }>();
 
 const isOpen = ref(true);
 
-// Emit close event when dialog closes
 watch(isOpen, (newVal) => {
-    if (!newVal) {
-        emit('close');
-    }
+    if (!newVal) emit('close');
 });
+
 </script>
 
 <template>
     <Dialog v-model:open="isOpen">
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>View User</DialogTitle>
-                <DialogDescription>
-                    User information details.
+        <DialogContent class="w-full max-w-md p-6 rounded-xl shadow-lg">
+            <!-- Header -->
+            <DialogHeader class="pb-4 border-b border-gray-200">
+                <DialogTitle class="text-xl font-semibold">User Information</DialogTitle>
+                <DialogDescription class="text-sm text-gray-500">
+                    Detailed information about this user.
                 </DialogDescription>
             </DialogHeader>
 
-            <div class="space-y-4">
+            <!-- Content -->
+            <div class="mt-6 space-y-5">
                 <div>
-                    <p class="text-sm text-gray-500">Name</p>
-                    <p class="text-lg font-medium">{{ userName }}</p>
+                    <Label class="text-muted-foreground">Name</Label>
+                    <p class="text-md font-medium">{{ userName }}</p>
                 </div>
+
                 <div>
-                    <p class="text-sm text-gray-500">Email</p>
+                    <Label class="text-muted-foreground">Email</Label>
                     <p class="text-lg">{{ userEmail }}</p>
                 </div>
-                <div>
-                    <p class="text-sm text-gray-500">Role</p>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        :class="userRole === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">
+
+                <div class="space-y-1">
+                    <Label class="text-muted-foreground">Role</Label>
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-medium border bg-blue-300/10 border-gray-300">
                         {{ userRole }}
                     </span>
                 </div>
             </div>
 
-            <DialogFooter>
+            <!-- Footer -->
+            <DialogFooter class="mt-6 flex justify-end">
                 <DialogClose asChild>
-                    <Button type="button">Close</Button>
+                    <Button type="button" class="px-4 py-2">Close</Button>
                 </DialogClose>
             </DialogFooter>
         </DialogContent>
