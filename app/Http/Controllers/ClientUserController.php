@@ -32,7 +32,7 @@ class ClientUserController extends Controller
                 'per_page' => $perPage,
             ],
             'users' => [
-                'data' => UserResource::collection($users->items()),
+                'data' => UserResource::collection($users->items())->resolve(),
                 'current_page' => $users->currentPage(),
                 'last_page' => $users->lastPage(),
                 'per_page' => $users->perPage(),
