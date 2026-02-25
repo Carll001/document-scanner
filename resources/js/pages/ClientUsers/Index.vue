@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
 import CreateDialog from '@/components/ClientUser/CreateDialog.vue';
 import Table from '@/components/ClientUser/Table.vue';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { User, type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Search } from 'lucide-vue-next';
-import { route } from '@/lib/route';
+import usersRoutes from '@/routes/clients/users';
 import {
     Select,
     SelectContent,
@@ -50,14 +51,23 @@ watch(
     },
 );
 
-const handleSearch = () => {
+watch(searchQuery, (value) => {
+    if (value === props.filters.search) return;
+    debouncedHandleSearch(value);
+});
+
+const debouncedHandleSearch = useDebounceFn((value: string | number) => {
+    const currentSearch = String(value ?? '');
+
     router.get(
-        route('clients.users.index'),
-        {
-            search: searchQuery.value,
-            per_page: props.filters.per_page,
-            page: 1,
-        },
+        usersRoutes.index.url({
+            query: {
+                search: currentSearch,
+                per_page: props.filters.per_page,
+                page: 1,
+            },
+        }),
+        {},
         {
             preserveState: true,
             preserveScroll: true,
@@ -65,7 +75,7 @@ const handleSearch = () => {
             only: ['users', 'filters'],
         },
     );
-};
+});
 </script>
 
 <template>
@@ -85,7 +95,6 @@ const handleSearch = () => {
                         />
                         <Input
                             v-model="searchQuery"
-                            @input="handleSearch"
                             placeholder="Search..."
                             class="pr-8"
                         />

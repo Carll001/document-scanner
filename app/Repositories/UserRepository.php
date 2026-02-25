@@ -19,10 +19,10 @@ class UserRepository
             ->where('email', '!=', 'superadmin@gmail.com')
 
             ->when($search && trim($search) !== '', function ($q) use ($search) {
-                $search = trim($search);
+                $search = mb_strtolower(trim($search));
                 $q->where(function ($qq) use ($search) {
-                    $qq->where('name', 'like', "%{$search}%")
-                       ->orWhere('email', 'like', "%{$search}%");
+                    $qq->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                       ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
                 });
             })
             ->orderByDesc('id')

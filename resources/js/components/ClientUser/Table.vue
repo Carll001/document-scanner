@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
-import { route } from '@/lib/route';
+import usersRoutes from '@/routes/clients/users';
 import {
     Table,
     TableBody,
@@ -53,12 +53,14 @@ const userToView = ref<User | null>(null);
 
 const goToPage = (pageNum: number) => {
     router.get(
-        route('clients.users.index'),
-        {
-            search: props.filters.search,
-            per_page: props.filters.per_page,
-            page: pageNum,
-        },
+        usersRoutes.index.url({
+            query: {
+                search: props.filters.search,
+                per_page: props.filters.per_page,
+                page: pageNum,
+            },
+        }),
+        {},
         {
             preserveState: true,
             preserveScroll: true,
