@@ -17,6 +17,7 @@ import { type NavItem } from '@/types';
 import AppLogo from './AppLogo.vue';
 import { dashboard } from '@/routes';
 import afs from '@/routes/afs';
+import clientData from '@/routes/clientData';
 
 const mainNavItems: NavItem[] = [
     {
@@ -27,6 +28,11 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Afs Scanner',
         href: afs.index(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Client Data',
+        href: clientData.index(),
         icon: LayoutGrid,
     },
 ];
