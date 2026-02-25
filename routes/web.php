@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AfsController;
+use App\Http\Controllers\ClientUserController;
 use App\Http\Controllers\ClientDataController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -22,8 +23,16 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
+    Route::prefix('clients/users')->name('clients.users.')->group(function () {
+        Route::get('/', [ClientUserController::class, 'index'])->name('index');
+        Route::get('/{user}', [ClientUserController::class, 'show'])->name('show'); // ✅ must exist
+        Route::post('/', [ClientUserController::class, 'store'])->name('store');
+        Route::put('/{user}', [ClientUserController::class, 'update'])->name('update');
+        Route::delete('/{user}', [ClientUserController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::prefix('afs')->name('afs.')->group(function () {
+
+    Route::prefix('afs')->name('afs.')->group(function  () {
         Route::get('/', [AfsController::class, 'index'])->name('index');
         Route::get('/create', [AfsController::class, 'create'])->name('create');
         Route::get('/placeholder', [AfsController::class, 'templatePlaceholders'])
@@ -51,4 +60,4 @@ Route::middleware('auth')->group(function () {
 
 
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
