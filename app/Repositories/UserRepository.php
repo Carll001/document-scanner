@@ -7,7 +7,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserRepository
 {
-    public function paginateClients(?string $search, int $perPage = 10, ?int $excludeUserId = null): LengthAwarePaginator
+    public function paginateClients(?string $search, ?string $role = null, int $perPage = 10, ?int $excludeUserId = null): LengthAwarePaginator
     {
         return User::query()
             ->whereIn('role', ['client', 'registrar'])
@@ -17,6 +17,10 @@ class UserRepository
 
             // ✅ hide seeded super admin account by email
             ->where('email', '!=', 'superadmin@gmail.com')
+
+            ->when($role && in_array($role, ['client', 'registrar'], true), function ($q) use ($role) {
+                $q->where('role', $role);
+            })
 
             ->when($search && trim($search) !== '', function ($q) use ($search) {
                 $search = mb_strtolower(trim($search));

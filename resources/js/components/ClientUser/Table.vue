@@ -36,6 +36,7 @@ const props = defineProps<{
     filters: {
         search: string;
         per_page: number;
+        role: string;
     };
     pagination: {
         current_page: number;
@@ -52,13 +53,19 @@ const userToDelete = ref<User | null>(null);
 const userToView = ref<User | null>(null);
 
 const goToPage = (pageNum: number) => {
+    const query: Record<string, string | number> = {
+        search: props.filters.search,
+        per_page: props.filters.per_page,
+        page: pageNum,
+    };
+
+    if (props.filters.role) {
+        query.role = props.filters.role;
+    }
+
     router.get(
         usersRoutes.index.url({
-            query: {
-                search: props.filters.search,
-                per_page: props.filters.per_page,
-                page: pageNum,
-            },
+            query,
         }),
         {},
         {

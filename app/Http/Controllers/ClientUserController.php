@@ -21,14 +21,17 @@ class ClientUserController extends Controller
     public function index(Request $request)
     {
         $search = $request->string('search')->toString();
+        $role = $request->string('role')->toString();
+        $role = in_array($role, ['client', 'registrar'], true) ? $role : '';
         $perPage = (int) $request->input('per_page', 10);
 
         // ✅ HIDE CURRENTLY LOGGED-IN USER FROM TABLE
-        $users = $this->repo->paginateClients($search, $perPage, Auth::id());
+        $users = $this->repo->paginateClients($search, $role, $perPage, Auth::id());
 
         return Inertia::render('ClientUsers/Index', [
             'filters' => [
                 'search' => $search,
+                'role' => $role,
                 'per_page' => $perPage,
             ],
             'users' => [

@@ -39,15 +39,42 @@ const props = defineProps<{
     filters: {
         search: string;
         per_page: number;
+        role: string;
     };
 }>();
 
 const searchQuery = ref(props.filters.search);
+const roleFilter = ref(props.filters.role || '');
+
+const getQueryParams = (
+    page = 1,
+    search: string | number = searchQuery.value,
+    role: string = roleFilter.value,
+) => {
+    const query: Record<string, string | number> = {
+        search: String(search ?? ''),
+        per_page: props.filters.per_page,
+        page,
+    };
+
+    if (role === 'client' || role === 'registrar') {
+        query.role = role;
+    }
+
+    return query;
+};
 
 watch(
     () => props.filters.search,
     (search) => {
         searchQuery.value = search;
+    },
+);
+
+watch(
+    () => props.filters.role,
+    (role) => {
+        roleFilter.value = role || '';
     },
 );
 
@@ -57,15 +84,27 @@ watch(searchQuery, (value) => {
 });
 
 const debouncedHandleSearch = useDebounceFn((value: string | number) => {
-    const currentSearch = String(value ?? '');
+    router.get(
+        usersRoutes.index.url({
+            query: getQueryParams(1, value),
+        }),
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['users', 'filters'],
+        },
+    );
+});
+
+watch(roleFilter, (value) => {
+    const currentRole = props.filters.role || '';
+    if (value === currentRole) return;
 
     router.get(
         usersRoutes.index.url({
-            query: {
-                search: currentSearch,
-                per_page: props.filters.per_page,
-                page: 1,
-            },
+            query: getQueryParams(1, searchQuery.value, value),
         }),
         {},
         {
@@ -100,15 +139,15 @@ const debouncedHandleSearch = useDebounceFn((value: string | number) => {
                         />
                     </div>
                     <div>
-                    <Select>
+                    <Select v-model="roleFilter">
                         <SelectTrigger class="w-[180px]">
                             <SelectValue placeholder="Filter Role" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectGroup>
                                 <SelectLabel>Roles</SelectLabel>
-                                <SelectItem value="apple">Registrar</SelectItem>
-                                <SelectItem value="banana">Client</SelectItem>
+                                <SelectItem value="registrar">Registrar</SelectItem>
+                                <SelectItem value="client">Client</SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>
