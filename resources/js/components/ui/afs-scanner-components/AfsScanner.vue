@@ -5,6 +5,9 @@ import afs from '@/routes/afs';
 import { Button } from '../button';
 import { Label } from '../label';
 import { Input } from '../input';
+import { ref } from 'vue';
+
+const closeScanner = ref(false);
 
 const props = defineProps<{
     csvData?: Record<string, any>[],
@@ -23,13 +26,14 @@ const submit = () => {
         forceFormData: true, // important for file uploads
         onSuccess: () => {
             console.log('Uploaded successfully')
+            closeScanner.value = false
         }
     })
 }
 
 </script>
 <template>
-    <Dialog >
+    <Dialog v-model:open="closeScanner">
         <DialogTrigger as-child>
             <Button>Scan </Button>
         </DialogTrigger>
@@ -50,7 +54,7 @@ const submit = () => {
 
                 
             <div v-if="form.progress">
-                Progress: {{ form.progress.percentage }}%
+                Processing please wait...
             </div>
             </div>
         </DialogContent>
