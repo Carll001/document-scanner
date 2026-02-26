@@ -76,6 +76,11 @@ const goToPage = (pageNum: number) => {
         },
     );
 };
+
+const showUser = (id: number) => {
+    router.visit(usersRoutes.show({id}).url)
+}
+
 </script>
 
 <template>
@@ -105,7 +110,7 @@ const goToPage = (pageNum: number) => {
                             user.role
                         }}</TableCell>
                         <TableCell class="flex justify-end space-x-2">
-                            <Button variant="outline" size="sm" @click="userToView = user"
+                            <Button variant="outline" size="sm" @click="showUser(user.id)"
                                 >View</Button
                             >
                             <Button variant="secondary" size="sm" @click="selectedUser = user"
@@ -190,13 +195,13 @@ const goToPage = (pageNum: number) => {
             :user-name="userToDelete.name"
             @close="userToDelete = null"
         />
-        <ViewDialog
+        <!-- <ViewDialog
             v-if="userToView"
             :user-id="userToView.id"
             :user-name="userToView.name"
             :user-email="userToView.email"
             :user-role="userToView.role"
             @close="userToView = null"
-        />
+        /> -->
     </div>
 </template>

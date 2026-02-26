@@ -4,26 +4,93 @@ namespace App\Http\Services;
 
 use App\Models\File;
 use Illuminate\Http\UploadedFile;
+use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use ZipArchive;
 
 class AfsService
 {
+    /* ---------------------------------
+     * Formatting / Helpers
+     * --------------------------------- */
+
     private function formatValue($value): string
-{
-    if ($value === null) return '';
+    {
+        if ($value === null) return '';
 
-    $raw = trim((string)$value);
+        $raw = trim((string) $value);
 
-    // remove commas/spaces so "1,234.5" becomes "1234.5"
-    $normalized = str_replace([',', ' '], '', $raw);
+        // remove commas/spaces so "1,234.5" becomes "1234.5"
+        $normalized = str_replace([',', ' '], '', $raw);
 
-    if ($normalized !== '' && is_numeric($normalized)) {
-        return number_format((float)$normalized, 2, '.', ',');
+        if ($normalized !== '' && is_numeric($normalized)) {
+            return number_format((float) $normalized, 2, '.', ',');
+        }
+
+        return $raw;
     }
 
-    return $raw;
-}
+    private function makeGmailFromCompany(string $companyName): string
+    {
+        $local = strtolower(trim($companyName));
+        $local = preg_replace('/\s+/', '.', $local);        // spaces -> dots
+        $local = preg_replace('/[^a-z0-9.]/', '', $local);  // keep letters/numbers/dots
+        $local = trim($local, '.');
+
+        if ($local === '') $local = 'client';
+
+        return $local . '@gmail.com';
+    }
+
+    private function getOrCreateClientUser(string $companyName, string $plainPassword): User
+    {
+        $baseEmail = $this->makeGmailFromCompany($companyName);
+        $email = $baseEmail;
+
+        // reuse if already exists
+        $existing = User::where('email', $email)->first();
+        if ($existing) return $existing;
+
+        // ensure unique email: append .2 .3 ...
+        $n = 2;
+        while (User::where('email', $email)->exists()) {
+            [$local, $domain] = explode('@', $baseEmail, 2);
+            $email = $local . '.' . $n . '@' . $domain;
+            $n++;
+        }
+
+        return User::create([
+            'name'     => $companyName,
+            'email'    => $email,
+            'password' => Hash::make($plainPassword),
+            'role'     => 'client',
+        ]);
+    }
+
+    private function normKey(string $key): string
+    {
+        $key = strtoupper(trim($key));
+        return preg_replace('/[^A-Z0-9]/', '', $key);
+    }
+
+    private function isMissingValue($value): bool
+    {
+        if ($value === null) return true;
+        $v = trim((string) $value);
+        if ($v === '') return true;
+
+        $lower = strtolower($v);
+        return in_array($lower, ['n/a', 'na', 'null', 'undefined', 'n / a'], true);
+    }
+
+    /* ---------------------------------
+     * Public API (HTTP request version)
+     *  - Works, but can timeout on big CSV
+     *  - Prefer using processCsvChunkToPdf via Jobs
+     * --------------------------------- */
+
     public function processCsvToPdfBatch(UploadedFile $csvFile, string $templatePath): void
     {
         if (!file_exists($templatePath)) {
@@ -52,14 +119,24 @@ class AfsService
 
         foreach ($rowChunks as $chunk) {
             $docxAbsList = [];
-            $docxToDbMeta = []; // baseName => [company, missing, filled, status]
+            $docxToDbMeta = []; // baseName => [file_id, pdf_rel]
 
             foreach ($chunk as $rowAssoc) {
                 // Build normalized CSV map: NORM_HEADER => value
                 $csvMap = [];
                 foreach ($rowAssoc as $header => $val) {
-                    $csvMap[$this->normKey((string)$header)] = $val;
+                    $csvMap[$this->normKey((string) $header)] = $val;
                 }
+
+                // company name for file + DB (normalized so BOM/spacing doesn't break it)
+                $company =
+                    $csvMap[$this->normKey('COMPANY NAME')] ??
+                    $csvMap[$this->normKey('Company Name')] ??
+                    $csvMap[$this->normKey('company_name')] ??
+                    'AFS';
+
+                // Create/find client user for this company
+                $clientUser = $this->getOrCreateClientUser((string) $company, 'password');
 
                 // Build replacements
                 $repl = [];
@@ -79,12 +156,6 @@ class AfsService
 
                 $status = count($missingFields) > 0 ? 'incomplete' : 'processing';
 
-                // company name for file + DB
-                $company = $rowAssoc['COMPANY NAME']
-                    ?? $rowAssoc['Company Name']
-                    ?? $rowAssoc['company_name']
-                    ?? 'AFS';
-
                 $safeCompany = Str::slug((string) $company) ?: 'afs';
                 $baseName = $safeCompany . '-' . now()->format('Ymd-His') . '-' . Str::random(6);
 
@@ -92,19 +163,19 @@ class AfsService
                 $pdfRel  = $outDirRel . '/' . $baseName . '.pdf';
                 $pdfName = $baseName . '.pdf';
 
-                // Create DB row immediately (like your old code)
+                // Create DB row immediately
                 $fileRow = File::create([
+                    'client_id'      => $clientUser->id,
                     'company_name'   => $company ?: null,
-                    'original_name'  => $pdfName, // we want PDF name
-                    'path'           => null,     // set after conversion
+                    'original_name'  => $pdfName,
+                    'path'           => null,
                     'status'         => $status === 'incomplete' ? 'incomplete' : 'processing',
                     'missing_fields' => $missingFields,
                     'filled_fields'  => $filledFields,
                 ]);
 
-                // Match your old behavior: only generate when completed
+                // Only generate DOCX/PDF when completed
                 if ($status === 'incomplete') {
-                    // skip docx/pdf generation
                     continue;
                 }
 
@@ -128,7 +199,6 @@ class AfsService
                 $baseName = pathinfo($docxAbs, PATHINFO_FILENAME);
                 $pdfAbs = $outDirAbs . '/' . $baseName . '.pdf';
 
-                // delete docx
                 @unlink($docxAbs);
 
                 $meta = $docxToDbMeta[$baseName] ?? null;
@@ -152,22 +222,132 @@ class AfsService
         }
     }
 
-    private function sofficeBatchConvert(string $outDirAbs, array $docxAbsList): void
-    {
-        $cmd = 'soffice --headless --nologo --nofirststartwizard --convert-to pdf --outdir '
-            . escapeshellarg($outDirAbs) . ' '
-            . implode(' ', array_map('escapeshellarg', $docxAbsList));
+    /* ---------------------------------
+     * Public API (Queue-friendly version)
+     *  - Call this inside a Job (chunk-based)
+     * --------------------------------- */
 
-        exec($cmd, $out, $code);
+    public function processCsvChunkToPdf(
+        string $csvAbsPath,
+        string $templatePath,
+        int $chunkIndex,
+        int $chunkSize = 30
+    ): void {
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("Template not found: {$templatePath}");
+        }
+        if (!file_exists($csvAbsPath)) {
+            throw new \RuntimeException("CSV not found: {$csvAbsPath}");
+        }
 
-        if ($code !== 0) {
-            throw new \RuntimeException("soffice failed:\n" . implode("\n", $out));
+        $rows = $this->readCsvAssocRowsFromPath($csvAbsPath);
+        if (count($rows) === 0) {
+            throw new \RuntimeException("CSV has no data rows.");
+        }
+
+        $placeholders = $this->templatePlaceholdersAllParts($templatePath);
+        if (count($placeholders) === 0) {
+            throw new \RuntimeException("No placeholders found in template.");
+        }
+
+        $outDirRel = 'generated/afs';
+        $outDirAbs = storage_path('app/public/' . $outDirRel);
+        if (!is_dir($outDirAbs)) {
+            mkdir($outDirAbs, 0775, true);
+        }
+
+        $offset = $chunkIndex * $chunkSize;
+        $chunk = array_slice($rows, $offset, $chunkSize);
+        if (!$chunk) return;
+
+        $docxAbsList = [];
+        $docxToDbMeta = []; // baseName => [file_id, pdf_rel]
+
+        foreach ($chunk as $rowAssoc) {
+            $csvMap = [];
+            foreach ($rowAssoc as $header => $val) {
+                $csvMap[$this->normKey((string) $header)] = $val;
+            }
+
+            $company =
+                $csvMap[$this->normKey('COMPANY NAME')] ??
+                $csvMap[$this->normKey('Company Name')] ??
+                $csvMap[$this->normKey('company_name')] ??
+                'AFS';
+
+            $clientUser = $this->getOrCreateClientUser((string) $company, 'password');
+
+            $repl = [];
+            $missingFields = [];
+            $filledFields = [];
+
+            foreach ($placeholders as $ph) {
+                $val = $csvMap[$this->normKey($ph)] ?? null;
+                if ($this->isMissingValue($val)) {
+                    $missingFields[] = $ph;
+                    $repl[$ph] = 'N / A';
+                } else {
+                    $filledFields[] = $ph;
+                    $repl[$ph] = $this->formatValue($val);
+                }
+            }
+
+            $status = count($missingFields) > 0 ? 'incomplete' : 'processing';
+
+            $safeCompany = Str::slug((string) $company) ?: 'afs';
+            $baseName = $safeCompany . '-' . now()->format('Ymd-His') . '-' . Str::random(6);
+
+            $docxAbs = $outDirAbs . '/' . $baseName . '.docx';
+            $pdfRel  = $outDirRel . '/' . $baseName . '.pdf';
+            $pdfName = $baseName . '.pdf';
+
+            $fileRow = File::create([
+                'client_id'      => $clientUser->id,
+                'company_name'   => $company ?: null,
+                'original_name'  => $pdfName,
+                'path'           => null,
+                'status'         => $status === 'incomplete' ? 'incomplete' : 'processing',
+                'missing_fields' => $missingFields,
+                'filled_fields'  => $filledFields,
+            ]);
+
+            if ($status === 'incomplete') continue;
+
+            $this->replaceInDocxAllParts($templatePath, $docxAbs, $repl);
+
+            $docxAbsList[] = $docxAbs;
+            $docxToDbMeta[$baseName] = [
+                'file_id' => $fileRow->id,
+                'pdf_rel' => $pdfRel,
+            ];
+        }
+
+        if ($docxAbsList) {
+            $this->sofficeBatchConvert($outDirAbs, $docxAbsList);
+        }
+
+        foreach ($docxAbsList as $docxAbs) {
+            $baseName = pathinfo($docxAbs, PATHINFO_FILENAME);
+            $pdfAbs = $outDirAbs . '/' . $baseName . '.pdf';
+
+            @unlink($docxAbs);
+
+            $meta = $docxToDbMeta[$baseName] ?? null;
+            if (!$meta) continue;
+
+            $file = File::find($meta['file_id']);
+            if (!$file) continue;
+
+            $file->update([
+                'status' => file_exists($pdfAbs) ? 'completed' : 'failed',
+                'path'   => file_exists($pdfAbs) ? $meta['pdf_rel'] : null,
+            ]);
         }
     }
 
-    /* ============================
-       Your existing helpers (copied)
-       ============================ */
+    /* ---------------------------------
+     * CSV Readers
+     * --------------------------------- */
 
     private function readCsvAssocRows(UploadedFile $file): array
     {
@@ -175,7 +355,7 @@ class AfsService
         if ($handle === false) return [];
 
         $headers = fgetcsv($handle) ?: [];
-        $headers = array_map(fn($h) => trim((string)$h), $headers);
+        $headers = array_map(fn($h) => trim((string) $h), $headers);
 
         $rows = [];
         while (($row = fgetcsv($handle)) !== false) {
@@ -190,6 +370,32 @@ class AfsService
         fclose($handle);
         return $rows;
     }
+
+    private function readCsvAssocRowsFromPath(string $path): array
+    {
+        $handle = fopen($path, 'r');
+        if ($handle === false) return [];
+
+        $headers = fgetcsv($handle) ?: [];
+        $headers = array_map(fn($h) => trim((string) $h), $headers);
+
+        $rows = [];
+        while (($row = fgetcsv($handle)) !== false) {
+            $assoc = [];
+            foreach ($headers as $i => $h) {
+                if ($h === '') continue;
+                $assoc[$h] = $row[$i] ?? '';
+            }
+            $rows[] = $assoc;
+        }
+
+        fclose($handle);
+        return $rows;
+    }
+
+    /* ---------------------------------
+     * Template placeholder extraction
+     * --------------------------------- */
 
     private function templatePlaceholdersAllParts(string $docxPath): array
     {
@@ -217,7 +423,7 @@ class AfsService
             preg_match_all('/\{([^{}]+)\}/u', $text, $matches);
             if (!empty($matches[1])) {
                 foreach ($matches[1] as $ph) {
-                    $ph = trim((string)$ph);
+                    $ph = trim((string) $ph);
                     if ($ph !== '') $placeholders[] = $ph;
                 }
             }
@@ -229,6 +435,10 @@ class AfsService
         sort($placeholders);
         return $placeholders;
     }
+
+    /* ---------------------------------
+     * Replace placeholders in DOCX
+     * --------------------------------- */
 
     private function replaceInDocxAllParts(string $templatePath, string $outputPath, array $repl): void
     {
@@ -257,6 +467,7 @@ class AfsService
             $xml = $zip->getFromName($part);
             if ($xml === false) continue;
 
+            // normalize placeholders that are split by Word XML runs:
             $xml = preg_replace_callback('/\{([\s\S]*?)\}/u', function ($m) {
                 $inside = $m[1];
                 $inside = preg_replace('/<[^>]+>/', '', $inside);
@@ -267,7 +478,7 @@ class AfsService
             }, $xml);
 
             foreach ($repl as $key => $value) {
-                $value = htmlspecialchars((string)$value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                $value = htmlspecialchars((string) $value, ENT_QUOTES | ENT_XML1, 'UTF-8');
                 $pattern = '/\{\s*' . preg_quote($key, '/') . '\s*\}/u';
                 $xml = preg_replace($pattern, $value, $xml);
             }
@@ -278,18 +489,20 @@ class AfsService
         $zip->close();
     }
 
-    private function normKey(string $key): string
-    {
-        $key = strtoupper(trim($key));
-        return preg_replace('/[^A-Z0-9]/', '', $key);
-    }
+    /* ---------------------------------
+     * DOCX -> PDF (LibreOffice)
+     * --------------------------------- */
 
-    private function isMissingValue($value): bool
+    private function sofficeBatchConvert(string $outDirAbs, array $docxAbsList): void
     {
-        if ($value === null) return true;
-        $v = trim((string) $value);
-        if ($v === '') return true;
-        $lower = strtolower($v);
-        return in_array($lower, ['n/a', 'na', 'null', 'undefined', 'n / a'], true);
+        $cmd = 'soffice --headless --nologo --nofirststartwizard --convert-to pdf --outdir '
+            . escapeshellarg($outDirAbs) . ' '
+            . implode(' ', array_map('escapeshellarg', $docxAbsList));
+
+        exec($cmd, $out, $code);
+
+        if ($code !== 0) {
+            throw new \RuntimeException("soffice failed:\n" . implode("\n", $out));
+        }
     }
 }

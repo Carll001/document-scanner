@@ -18,7 +18,6 @@ import AppLogo from './AppLogo.vue';
 import { dashboard } from '@/routes';
 import afs from '@/routes/afs';
 import clientUsers from '@/routes/clients/users';
-import clientData from '@/routes/clientData';
 
 const mainNavItems: NavItem[] = [
     {
@@ -35,11 +34,6 @@ const mainNavItems: NavItem[] = [
         title: 'Manage Users',
         href: clientUsers.index(), 
         icon: Users,
-    },
-    {
-        title: 'Client Data',
-        href: clientData.index(),
-        icon: LayoutGrid,
     },
 ];
 

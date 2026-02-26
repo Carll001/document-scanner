@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('files', function (Blueprint $table) {
             $table->id();
-
+            $table->foreignId('client_id')->constrained('users')->cascadeOnDelete();
             $table->string('company_name')->nullable();
             $table->string('original_name')->nullable();   // filename shown to user
             $table->string('path')->nullable();                        // storage path

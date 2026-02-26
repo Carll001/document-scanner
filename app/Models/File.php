@@ -11,6 +11,7 @@ class File extends Model
     // use HasUuids;
 
     protected $fillable = [
+        'client_id',
         'company_name',
         'original_name',
         'path',
@@ -26,6 +27,6 @@ class File extends Model
 
     public function client()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class , 'client_id');
     }
 }

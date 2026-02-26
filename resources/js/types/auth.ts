@@ -1,3 +1,5 @@
+import { File } from "./file";
+
 export type User = {
     id: number;
     name: string;
@@ -8,6 +10,9 @@ export type User = {
     created_at: string;
     updated_at: string;
     [key: string]: unknown;
+
+
+    files: File[]
 };
 
 export type Auth = {

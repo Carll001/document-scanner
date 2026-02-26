@@ -15,6 +15,8 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'role' => $this->role,
             'created_at' => optional($this->created_at)->toDateTimeString(),
+
+            'files' => $this->whenLoaded('files'),
         ];
     }
 }
