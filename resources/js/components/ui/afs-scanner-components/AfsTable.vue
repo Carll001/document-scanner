@@ -204,7 +204,7 @@ const openMissing = (file: FileRow) => {
                     </TableCell>
 
                     <TableCell class="text-right space-x-2">
-                        <Button size="sm" @click="printPdf(file)">
+                        <Button size="sm" @click="printPdf(file)" v-if="file.status === 'completed'">
                             Print
                         </Button>
                         <Button size="sm" class="bg-blue-700 hover:bg-blue-800 dark:text-white"
