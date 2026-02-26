@@ -126,13 +126,6 @@ watch(roleFilter, (value) => {
 
         <div class="flex flex-1 flex-col gap-4 p-4">
             <section>
-
-                <div>
-                    <h1>User Management</h1>
-                </div>
-            </section>
-        
-            <section>
                 <div class="flex justify-end gap-2">
 
                     <!-- Right Side -->

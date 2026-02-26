@@ -207,7 +207,7 @@ const openMissing = (file: FileRow) => {
                         <Button size="sm" @click="printPdf(file)" v-if="file.status === 'completed'">
                             Print
                         </Button>
-                        <Button size="sm" class="bg-blue-700 hover:bg-blue-800 dark:text-white"
+                        <Button  variant="outline" size="sm"  class="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
                             @click="openMissing(file)">
                             Field Summary
                         </Button>
