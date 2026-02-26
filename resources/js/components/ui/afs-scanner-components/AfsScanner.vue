@@ -6,6 +6,7 @@ import { Button } from '../button';
 import { Label } from '../label';
 import { Input } from '../input';
 import { ref } from 'vue';
+import { toast } from 'vue-sonner';
 
 const closeScanner = ref(false);
 
@@ -25,7 +26,8 @@ const submit = () => {
     form.post(afs.parse().url, {
         forceFormData: true, // important for file uploads
         onSuccess: () => {
-            console.log('Uploaded successfully')
+            // console.log('Uploaded successfully')
+            toast.success('Success!');
             closeScanner.value = false
         }
     })

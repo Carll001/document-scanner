@@ -3,6 +3,7 @@
 use App\Http\Controllers\AfsController;
 use App\Http\Controllers\ClientUserController;
 use App\Http\Controllers\ClientDataController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -19,9 +20,7 @@ Route::get('/', function () {
 
 
 Route::middleware('auth')->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::prefix('clients/users')->name('clients.users.')->group(function () {
         Route::get('/', [ClientUserController::class, 'index'])->name('index');

@@ -20,7 +20,6 @@ import SelectTrigger from '../ui/select/SelectTrigger.vue';
 import SelectValue from '../ui/select/SelectValue.vue';
 import clients from '@/routes/clients';
 import { toast } from 'vue-sonner';
-import Label from '../ui/label/Label.vue';
 
 const closeModal = ref(false);
 
