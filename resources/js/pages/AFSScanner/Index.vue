@@ -244,16 +244,6 @@ const printAllCompleted = async () => {
             </SelectContent>
           </Select>
 
-          <Select v-model="documentFilter">
-            <SelectTrigger class="w-56">
-              <SelectValue placeholder="Filter document" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Documents</SelectItem>
-              <SelectItem value="with_document">With Document</SelectItem>
-              <SelectItem value="no_document">No Document Generated</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         <div class="flex gap-2">
