@@ -25,7 +25,7 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('clients/users')->name('clients.users.')->group(function () {
         Route::get('/', [ClientUserController::class, 'index'])->name('index');
-        Route::get('/{user}', [ClientUserController::class, 'show'])->name('show'); // ✅ must exist
+        Route::get('/{user}', [ClientUserController::class, 'show'])->name('show'); 
         Route::post('/', [ClientUserController::class, 'store'])->name('store');
         Route::put('/{user}', [ClientUserController::class, 'update'])->name('update');
         Route::delete('/{user}', [ClientUserController::class, 'destroy'])->name('destroy');

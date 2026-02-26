@@ -48,14 +48,19 @@ class ClientUserController extends Controller
 
     public function show(User $user)
     {
+
+
         // ✅ allow only client/registrar
         abort_unless(in_array($user->role, ['client', 'registrar']), 404);
 
         // ✅ SAFETY: prevent viewing own account via URL
         abort_if(Auth::id() === $user->id, 403);
 
+        $files = $user->files()->latest()->paginate(10);
+
         return Inertia::render('ClientUsers/Show', [
             'user' => new UserResource($user),
+            'generatedFiles' => $files,
         ]);
     }
 

@@ -28,27 +28,7 @@ import {
     PaginationPrevious,
 } from '@/components/ui/pagination'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../tooltip';
-
-type FileRow = {
-    id: number
-    company_name: string | null
-    original_name: string | null
-    path: string | null
-    status: string
-    created_at?: string
-    missing_fields?: string[] | null
-    filled_fields?: string[] | null
-}
-
-type PaginatedResponse = {
-    data: FileRow[]
-    current_page: number
-    last_page: number
-    per_page: number
-    total: number
-    from: number
-    to: number
-}
+import { FileRow, PaginatedResponse } from '@/types/paginated-response';
 
 const props = defineProps<{
     generatedFiles?: PaginatedResponse
@@ -61,6 +41,35 @@ const props = defineProps<{
 
 const goToPage = (page: number) => {
     router.get(afs.index().url, { page }, { preserveScroll: true })
+}
+const printPdf = (file: FileRow) => {
+  if (!file.path) return
+
+  const url = `/storage/${file.path}` // must be the PDF path
+
+  // Remove previous iframe if any
+  const existing = document.getElementById('print-iframe')
+  if (existing) existing.remove()
+
+  const iframe = document.createElement('iframe')
+  iframe.id = 'print-iframe'
+  iframe.style.position = 'fixed'
+  iframe.style.right = '0'
+  iframe.style.bottom = '0'
+  iframe.style.width = '0'
+  iframe.style.height = '0'
+  iframe.style.border = '0'
+  iframe.src = url
+
+  iframe.onload = () => {
+    // give PDF viewer a moment to render (important!)
+    setTimeout(() => {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+    }, 300)
+  }
+
+  document.body.appendChild(iframe)
 }
 
 const paginationPages = computed(() => {
@@ -171,7 +180,7 @@ const openMissing = (file: FileRow) => {
                     </TableCell>
 
                     <TableCell class="text-right space-x-2">
-                        <Button size="sm" @click="openMissing(file)">
+                        <Button size="sm" @click="printPdf(file)">
                             Print
                         </Button>
                         <Button size="sm" class="bg-blue-700 hover:bg-blue-800 dark:text-white"

@@ -18,7 +18,6 @@ import AppLogo from './AppLogo.vue';
 import { dashboard } from '@/routes';
 import afs from '@/routes/afs';
 import clientUsers from '@/routes/clients/users';
-import clientData from '@/routes/clientData';
 
 const mainNavItems: NavItem[] = [
     {
