@@ -13,16 +13,19 @@ class File extends Model
     protected $fillable = [
         'client_id',
         'company_name',
+        'president_name',
         'original_name',
         'path',
         'status',
         'missing_fields',
         'filled_fields',
+        'raw_data',
     ];
 
     protected $casts = [
         'missing_fields' => 'array',
         'filled_fields' => 'array',
+        'raw_data'       => 'array',
     ];
 
     public function client()
