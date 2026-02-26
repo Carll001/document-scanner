@@ -150,7 +150,7 @@ const openMissing = (file: FileRow) => {
             <TableBody>
                 <TableRow v-for="(file, index) in (generatedFiles?.data ?? [])" :key="file.id" >
                     <TableCell class="">
-                        {{ index + 1 }}
+                        {{ (generatedFiles?.from ?? 0) + index }}
                     </TableCell>
 
                     <TableCell class="font-medium max-w-2xs truncate">
