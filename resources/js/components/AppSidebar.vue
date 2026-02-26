@@ -36,11 +36,6 @@ const mainNavItems: NavItem[] = [
         href: clientUsers.index(), 
         icon: Users,
     },
-    {
-        title: 'Client Data',
-        href: clientData.index(),
-        icon: LayoutGrid,
-    },
 ];
 
 const footerNavItems: NavItem[] = [
