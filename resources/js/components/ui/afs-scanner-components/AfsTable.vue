@@ -8,7 +8,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { Button } from '../button';
-import { useForm, router } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import afs from '@/routes/afs';
 import { computed, ref } from 'vue';
 import {
@@ -57,10 +57,34 @@ const props = defineProps<{
         complete: number
         incomplete: number
     }
+    filters?: {
+        search: string
+        status: string
+        document: string
+    }
 }>()
 
 const goToPage = (page: number) => {
-    router.get(afs.index().url, { page }, { preserveScroll: true })
+    const query: Record<string, string | number> = {
+        page,
+        search: props.filters?.search ?? '',
+    }
+
+    const status = props.filters?.status ?? 'all'
+    query.status = status === 'completed' || status === 'incomplete' ? status : 'all'
+    const document = props.filters?.document ?? 'all'
+    query.document = document === 'with_document' || document === 'no_document' ? document : 'all'
+
+    router.get(
+        afs.index.url({ query }),
+        {},
+        {
+            preserveScroll: true,
+            preserveState: true,
+            replace: true,
+            only: ['generatedFiles', 'filters'],
+        },
+    )
 }
 
 const paginationPages = computed(() => {
