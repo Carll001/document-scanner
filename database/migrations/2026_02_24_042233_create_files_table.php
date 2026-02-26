@@ -15,11 +15,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('client_id')->constrained('users')->cascadeOnDelete();
             $table->string('company_name')->nullable();
+            $table->string('president_name')->nullable();
             $table->string('original_name')->nullable();   // filename shown to user
             $table->string('path')->nullable();                        // storage path
             $table->string('status')->default('pending'); // completed, pending, incomplete
             $table->json('missing_fields')->nullable();
             $table->json('filled_fields')->nullable();
+            $table->json('raw_data')->nullable();
             $table->timestamps();
         });
     }

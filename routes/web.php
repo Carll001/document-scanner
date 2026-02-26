@@ -37,6 +37,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [AfsController::class, 'create'])->name('create');
         Route::get('/placeholder', [AfsController::class, 'templatePlaceholders'])
             ->name('placeholder');
+            Route::put('/files/{file}/raw-data', [AfsController::class, 'updateRawData'])
+    ->name('save');
+
+Route::post('/files/{file}/regenerate', [AfsController::class, 'regenerate'])
+    ->name('regenerate');
         Route::post('/', [AfsController::class, 'store'])->name('store');
         Route::post('/parse', [AfsController::class, 'parse'])->name('parse');
         Route::get('/{afs}', [AfsController::class, 'show'])->name('show');

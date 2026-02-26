@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\File;
 use App\Http\Services\AfsService;
+use App\Models\File;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -18,26 +18,18 @@ class AfsController extends Controller
 
         $generatedFiles = File::query()
             ->when($search !== '', function ($query) use ($searchLower) {
-                $query->where(function ($subQuery) use ($searchLower) {
-                    $subQuery
-                        ->whereRaw('LOWER(company_name) LIKE ?', ["%{$searchLower}%"])
+                $query->where(function ($sub) use ($searchLower) {
+                    $sub->whereRaw('LOWER(company_name) LIKE ?', ["%{$searchLower}%"])
                         ->orWhereRaw('LOWER(original_name) LIKE ?', ["%{$searchLower}%"])
                         ->orWhereRaw('LOWER(status) LIKE ?', ["%{$searchLower}%"])
-                        ->orWhereRaw(
-                            "CASE WHEN path IS NULL THEN 'no document generated because of missing fields' ELSE '' END LIKE ?",
-                            ["%{$searchLower}%"]
-                        );
+                        ->orWhereRaw('LOWER(president_name) LIKE ?', ["%{$searchLower}%"]);
                 });
             })
-            ->when(in_array($status, ['completed', 'incomplete'], true), function ($query) use ($status) {
-                $query->whereRaw('LOWER(status) = ?', [$status]);
+            ->when(in_array($status, ['completed', 'incomplete', 'failed', 'processing', 'skipped'], true), function ($q) use ($status) {
+                $q->where('status', $status);
             })
-            ->when($document === 'no_document', function ($query) {
-                $query->whereNull('path');
-            })
-            ->when($document === 'with_document', function ($query) {
-                $query->whereNotNull('path');
-            })
+            ->when($document === 'no_document', fn($q) => $q->whereNull('path'))
+            ->when($document === 'with_document', fn($q) => $q->whereNotNull('path'))
             ->latest()
             ->paginate(8)
             ->withQueryString();
@@ -46,8 +38,8 @@ class AfsController extends Controller
             'generatedFiles' => $generatedFiles,
             'filters' => [
                 'search' => $search,
-                'status' => in_array($status, ['completed', 'incomplete'], true) ? $status : 'all',
-                'document' => in_array($document, ['all', 'no_document', 'with_document'], true) ? $document : 'all',
+                'status' => $status,
+                'document' => $document,
             ],
         ]);
     }
@@ -66,6 +58,34 @@ class AfsController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Processed CSV rows successfully (PDF generated).');
+        return back()->with('success', 'Processed CSV rows successfully.');
+    }
+
+    public function updateRawData(Request $request, File $file, AfsService $afs)
+    {
+        $validated = $request->validate([
+            'raw_data' => ['required', 'array'],
+        ]);
+
+        try {
+            $afs->updateFileRawData($file, $validated['raw_data']);
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Data updated.');
+    }
+
+    public function regenerate(File $file, AfsService $afs)
+    {
+        $templatePath = storage_path('app/templates/afs-template.docx');
+
+        try {
+            $afs->regenerateSingleFromRawData($file, $templatePath);
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'PDF regenerated.');
     }
 }

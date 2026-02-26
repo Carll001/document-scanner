@@ -15,26 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
-type FileRow = {
-  id: number
-  company_name: string | null
-  original_name: string | null
-  path: string | null
-  status: 'completed' | 'incomplete' | 'generated' | string
-  created_at?: string
-  missing_fields?: string[] | null
-}
-
-type PaginatedResponse = {
-  data: FileRow[]
-  current_page: number
-  last_page: number
-  per_page: number
-  total: number
-  from: number
-  to: number
-}
+import { FileRow, PaginatedResponse } from '@/types/paginated-response'
 
 const props = defineProps<{
   generatedFiles?: PaginatedResponse

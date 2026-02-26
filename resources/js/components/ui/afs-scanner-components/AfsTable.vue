@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/pagination'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../tooltip';
 import { FileRow, PaginatedResponse } from '@/types/paginated-response';
+import EditDialog from './EditDialog.vue';
 
 const props = defineProps<{
     generatedFiles?: PaginatedResponse
@@ -139,6 +140,7 @@ const openMissing = (file: FileRow) => {
                 <TableRow>
                     <TableHead>#</TableHead>
                     <TableHead>Company</TableHead>
+                    <TableHead>President</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead class="text-center">Field</TableHead>
                     <TableHead class="text-center">Missing</TableHead>
@@ -161,6 +163,19 @@ const openMissing = (file: FileRow) => {
                                 </TooltipTrigger>
                                 <TooltipContent >
                                     <p>{{ file.company_name ?? 'Unknown Company' }}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                    </TableCell>
+                    <TableCell class="font-medium max-w-2xs truncate">
+                        <TooltipProvider :delay-duration="700">
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <p class="max-w-xs truncate">{{ file.president_name ?? 'Unknown President' }}</p>
+                                </TooltipTrigger>
+                                <TooltipContent >
+                                    <p>{{ file.president_name ?? 'Unknown President' }}</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
@@ -204,6 +219,7 @@ const openMissing = (file: FileRow) => {
                     </TableCell>
 
                     <TableCell class="text-right space-x-2">
+                        <EditDialog :file="file"/>
                         <Button size="sm" @click="printPdf(file)" v-if="file.status === 'completed'">
                             Print
                         </Button>
