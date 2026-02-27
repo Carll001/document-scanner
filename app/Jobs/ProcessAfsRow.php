@@ -13,7 +13,7 @@ class ProcessAfsChunk implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 600; // seconds (10 mins) for heavy soffice work
+    public int $timeout = 60000; // seconds (10 mins) for heavy soffice work
     public int $tries = 2;
 
     public function __construct(

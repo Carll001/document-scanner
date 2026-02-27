@@ -74,6 +74,7 @@ class AfsService
         return preg_replace('/[^A-Z0-9]/', '', $key);
     }
 
+    // FINDING N / A DATA FROM DB
     private function isMissingValue($value): bool
     {
         if ($value === null) return true;
@@ -106,7 +107,7 @@ class AfsService
             throw new \RuntimeException("No placeholders found in template.");
         }
 
-        $outDirRel = 'generated/afs';
+        $outDirRel = 'generated/';
         $outDirAbs = storage_path('app/public/' . $outDirRel);
         if (!is_dir($outDirAbs)) {
             mkdir($outDirAbs, 0775, true);
@@ -162,6 +163,8 @@ class AfsService
                 $pdfRel  = $outDirRel . '/' . $baseName . '.pdf';
                 $pdfName = $baseName . '.pdf';
 
+
+                // dd($rowAssoc);
                 // Create DB row immediately
                 $fileRow = File::create([
                     'client_id'      => $clientUser->id,
@@ -171,6 +174,7 @@ class AfsService
                     'status'         => $status === 'incomplete' ? 'incomplete' : 'processing',
                     'missing_fields' => $missingFields,
                     'filled_fields'  => $filledFields,
+                    'raw_data' => $rowAssoc
                 ]);
 
                 // Only generate DOCX/PDF when completed
@@ -300,6 +304,7 @@ class AfsService
             $pdfRel  = $outDirRel . '/' . $baseName . '.pdf';
             $pdfName = $baseName . '.pdf';
 
+
             $fileRow = File::create([
                 'client_id'      => $clientUser->id,
                 'company_name'   => $company ?: null,
@@ -309,6 +314,8 @@ class AfsService
                 'missing_fields' => $missingFields,
                 'filled_fields'  => $filledFields,
             ]);
+
+            if ($status === 'incomplete') continue;
 
             if ($status === 'incomplete') continue;
 
@@ -502,6 +509,105 @@ class AfsService
 
         if ($code !== 0) {
             throw new \RuntimeException("soffice failed:\n" . implode("\n", $out));
+        }
+    }
+    public function regeneratePdfFromFile(File $file, string $templatePath): void
+    {
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("Template not found: {$templatePath}");
+        }
+
+        $raw = $file->raw_data ?? [];
+        if (!is_array($raw) || count($raw) === 0) {
+            throw new \RuntimeException("This file has no raw_data to regenerate.");
+        }
+
+        $placeholders = $this->templatePlaceholdersAllParts($templatePath);
+        if (count($placeholders) === 0) {
+            throw new \RuntimeException("No placeholders found in template.");
+        }
+
+        $outDirRel = 'generated/';
+        $outDirAbs = storage_path('app/public/' . $outDirRel);
+        if (!is_dir($outDirAbs)) {
+            mkdir($outDirAbs, 0775, true);
+        }
+
+        // Build normalized CSV-like map from saved raw_data
+        $csvMap = [];
+        foreach ($raw as $header => $val) {
+            $csvMap[$this->normKey((string) $header)] = $val;
+        }
+
+        $company =
+            $csvMap[$this->normKey('COMPANY NAME')] ??
+            $csvMap[$this->normKey('Company Name')] ??
+            $csvMap[$this->normKey('company_name')] ??
+            ($file->company_name ?? 'AFS');
+
+        // Build replacements + missing/filled again
+        $repl = [];
+        $missingFields = [];
+        $filledFields = [];
+
+        foreach ($placeholders as $ph) {
+            $val = $csvMap[$this->normKey($ph)] ?? null;
+
+            if ($this->isMissingValue($val)) {
+                $missingFields[] = $ph;
+                $repl[$ph] = 'N / A';
+            } else {
+                $filledFields[] = $ph;
+                $repl[$ph] = $this->formatValue($val);
+            }
+        }
+
+        // If still incomplete after edit, mark + stop
+        if (count($missingFields) > 0) {
+            $file->update([
+                'company_name'    => $company ?: null,
+                'status'          => 'incomplete',
+                'path'            => null,
+                'missing_fields'  => $missingFields,
+                'filled_fields'   => $filledFields,
+            ]);
+            return;
+        }
+
+        // Create new output name every regenerate (or reuse old base if you want)
+        $safeCompany = Str::slug((string) $company) ?: 'afs';
+        $baseName = $safeCompany . '-' . now()->format('Ymd-His') . '-' . Str::random(6);
+
+        $docxAbs = $outDirAbs . '/' . $baseName . '.docx';
+        $pdfAbs  = $outDirAbs . '/' . $baseName . '.pdf';
+        $pdfRel  = $outDirRel . '/' . $baseName . '.pdf';
+
+        // Mark processing
+        $file->update([
+            'company_name'    => $company ?: null,
+            'status'          => 'processing',
+            'path'            => null,
+            'missing_fields'  => $missingFields,
+            'filled_fields'   => $filledFields,
+        ]);
+
+        // Generate docx then convert to pdf
+        $this->replaceInDocxAllParts($templatePath, $docxAbs, $repl);
+        $this->sofficeBatchConvert($outDirAbs, [$docxAbs]);
+
+        @unlink($docxAbs);
+
+        if (file_exists($pdfAbs)) {
+            $file->update([
+                'status' => 'completed',
+                'path'   => $pdfRel,
+                'original_name' => $baseName . '.pdf',
+            ]);
+        } else {
+            $file->update([
+                'status' => 'failed',
+                'path'   => null,
+            ]);
         }
     }
 }

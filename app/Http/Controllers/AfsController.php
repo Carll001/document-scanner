@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use App\Http\Services\AfsService;
+use App\Models\History;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class AfsController extends Controller
@@ -39,7 +41,7 @@ class AfsController extends Controller
                 $query->whereNotNull('path');
             })
             ->latest()
-            ->paginate(8)
+            ->paginate(20)
             ->withQueryString();
 
         return Inertia::render('AFSScanner/Index', [
@@ -67,5 +69,55 @@ class AfsController extends Controller
         }
 
         return back()->with('success', 'Processed CSV rows successfully (PDF generated).');
+    }
+
+    public function updateRawData(Request $request, File $file)
+    {
+        $data = $request->validate([
+            'raw_data' => ['required', 'array'],
+        ]);
+
+        $oldRaw = $file->raw_data ?? [];
+        $newRaw = $data['raw_data'];
+
+        foreach ($newRaw as $key => $newValue) {
+
+            $oldValue = $oldRaw[$key] ?? null;
+
+            // normalize to string to avoid false positives
+            $old = trim((string) $oldValue);
+            $new = trim((string) $newValue);
+
+            if ($old !== $new) {
+
+                History::create([
+                    'user_id'   => Auth::id(),
+                    'file_id'   => $file->id,
+                    'field'     => $key,
+                    'old_value' => $oldValue,
+                    'new_value' => $newValue,
+                ]);
+            }
+        }
+
+        // Save new raw_data
+        $file->update([
+            'raw_data' => $newRaw,
+        ]);
+
+        return back()->with('success', 'Saved.');
+    }
+
+    public function regenerate(Request $request, File $file, AfsService $afs)
+    {
+        $templatePath = storage_path('app/templates/afs-template.docx');
+
+        try {
+            $afs->regeneratePdfFromFile($file, $templatePath);
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Regenerated PDF.');
     }
 }

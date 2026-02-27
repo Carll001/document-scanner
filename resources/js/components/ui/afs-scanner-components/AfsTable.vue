@@ -29,6 +29,9 @@ import {
 } from '@/components/ui/pagination'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../tooltip';
 import { FileRow, PaginatedResponse } from '@/types/paginated-response';
+import { Ellipsis } from 'lucide-vue-next';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../dropdown-menu';
+import EditDialog from './EditDialog.vue';
 
 const props = defineProps<{
     generatedFiles?: PaginatedResponse
@@ -43,6 +46,26 @@ const props = defineProps<{
         document: string
     }
 }>()
+
+const editOpen = ref(false)
+const editSelected = ref<FileRow | null>(null)
+
+const openEdit = (file: FileRow) => {
+    editSelected.value = file
+    editOpen.value = true
+}
+
+const paginationInfo = computed(() => {
+    if (!props.generatedFiles) return null
+
+    const { from, to, total } = props.generatedFiles
+
+    return {
+        from: from ?? 0,
+        to: to ?? 0,
+        total: total ?? 0,
+    }
+})
 
 const goToPage = (page: number) => {
     const query: Record<string, string | number> = {
@@ -67,57 +90,56 @@ const goToPage = (page: number) => {
     )
 }
 const printPdf = (file: FileRow) => {
-  if (!file.path) return
+    if (!file.path) return
 
-  const url = `/storage/${file.path}` // must be the PDF path
+    const url = `/storage/${file.path}` // must be the PDF path
 
-  // Remove previous iframe if any
-  const existing = document.getElementById('print-iframe')
-  if (existing) existing.remove()
+    // Remove previous iframe if any
+    const existing = document.getElementById('print-iframe')
+    if (existing) existing.remove()
 
-  const iframe = document.createElement('iframe')
-  iframe.id = 'print-iframe'
-  iframe.style.position = 'fixed'
-  iframe.style.right = '0'
-  iframe.style.bottom = '0'
-  iframe.style.width = '0'
-  iframe.style.height = '0'
-  iframe.style.border = '0'
-  iframe.src = url
+    const iframe = document.createElement('iframe')
+    iframe.id = 'print-iframe'
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    iframe.src = url
 
-  iframe.onload = () => {
-    // give PDF viewer a moment to render (important!)
-    setTimeout(() => {
-      iframe.contentWindow?.focus()
-      iframe.contentWindow?.print()
-    }, 300)
-  }
+    iframe.onload = () => {
+        // give PDF viewer a moment to render (important!)
+        setTimeout(() => {
+            iframe.contentWindow?.focus()
+            iframe.contentWindow?.print()
+        }, 300)
+    }
 
-  document.body.appendChild(iframe)
+    document.body.appendChild(iframe)
 }
 
 const paginationPages = computed(() => {
     if (!props.generatedFiles) return []
+
     const { current_page, last_page } = props.generatedFiles
-    const pages: (number | string)[] = []
+    const windowSize = 4
 
-    // Always show first page
-    pages.push(1)
+    // start from current page
+    let start = current_page
+    let end = start + windowSize - 1
 
-    // Show pages around current page
-    const start = Math.max(2, current_page - 1)
-    const end = Math.min(last_page - 1, current_page + 1)
+    // if overflow right, shift left
+    if (end > last_page) {
+        end = last_page
+        start = Math.max(1, end - windowSize + 1)
+    }
 
-    if (start > 2) pages.push('...')
-
+    // build pages
+    const pages: number[] = []
     for (let i = start; i <= end; i++) {
         pages.push(i)
     }
-
-    if (end < last_page - 1) pages.push('...')
-
-    // Always show last page if more than 1
-    if (last_page > 1) pages.push(last_page)
 
     return pages
 })
@@ -133,7 +155,7 @@ const openMissing = (file: FileRow) => {
 
 </script>
 <template>
-    <div class="flex flex-col flex-1 h-[76svh] p-2 gap-2">
+    <div class="flex flex-col flex-1 h-[75svh] p-2 gap-2">
         <Table class="text-">
             <TableHeader>
                 <TableRow>
@@ -148,7 +170,7 @@ const openMissing = (file: FileRow) => {
             </TableHeader>
 
             <TableBody>
-                <TableRow v-for="(file, index) in (generatedFiles?.data ?? [])" :key="file.id" >
+                <TableRow v-for="(file, index) in (generatedFiles?.data ?? [])" :key="file.id">
                     <TableCell class="">
                         {{ (generatedFiles?.from ?? 0) + index }}
                     </TableCell>
@@ -159,7 +181,7 @@ const openMissing = (file: FileRow) => {
                                 <TooltipTrigger>
                                     <p class="max-w-xs truncate">{{ file.company_name ?? 'Unknown Company' }}</p>
                                 </TooltipTrigger>
-                                <TooltipContent >
+                                <TooltipContent>
                                     <p>{{ file.company_name ?? 'Unknown Company' }}</p>
                                 </TooltipContent>
                             </Tooltip>
@@ -204,13 +226,27 @@ const openMissing = (file: FileRow) => {
                     </TableCell>
 
                     <TableCell class="text-right space-x-2">
+
                         <Button size="sm" @click="printPdf(file)" v-if="file.status === 'completed'">
                             Print
                         </Button>
-                        <Button size="sm" class="bg-blue-700 hover:bg-blue-800 dark:text-white"
-                            @click="openMissing(file)">
-                            Field Summary
-                        </Button>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger as-child>
+                                <Button variant="ghost" size="icon-sm">
+                                    <Ellipsis />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem @click="openEdit(file)">
+                                    Edit Financials
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem @click="openMissing(file)">
+                                    Field Summary
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
                         <!-- <span v-else class="text-muted-foreground text-sm">—</span> -->
                     </TableCell>
@@ -224,24 +260,40 @@ const openMissing = (file: FileRow) => {
             </TableBody>
         </Table>
 
-        <div v-if="generatedFiles && generatedFiles.last_page > 1" class="mt-6 mt-auto ml-auto">
-            <Pagination :items-per-page="generatedFiles.per_page" :total="generatedFiles.total">
-                <PaginationContent>
-                    <PaginationPrevious
-                        @click="generatedFiles!.current_page > 1 && goToPage(generatedFiles!.current_page - 1)"
-                        :disabled="generatedFiles.current_page === 1" />
-                    <template v-for="(page, index) in paginationPages" :key="index">
-                        <PaginationEllipsis v-if="page === '...'" />
-                        <PaginationItem v-else :value="page as number" :is-active="page === generatedFiles.current_page"
-                            @click="goToPage(page as number)">
-                            {{ page }}
-                        </PaginationItem>
-                    </template>
-                    <PaginationNext
-                        @click="generatedFiles!.current_page < generatedFiles!.last_page && goToPage(generatedFiles!.current_page + 1)"
-                        :disabled="generatedFiles.current_page === generatedFiles.last_page" />
-                </PaginationContent>
-            </Pagination>
+        <div class="mt-6 flex flex-col mx-auto mt-auto gap-4">
+            <p class="text-sm text-muted-foreground text-center">
+                Showing
+                <span class="font-medium text-foreground">
+                    {{ paginationInfo?.from }}
+                </span>
+                –
+                <span class="font-medium text-foreground">
+                    {{ paginationInfo?.to }}
+                </span>
+                of
+                <span class="font-medium text-foreground">
+                    {{ paginationInfo?.total.toLocaleString() }}
+                </span>
+                total clients
+            </p>
+            <div v-if="generatedFiles && generatedFiles.last_page > 1">
+                <Pagination :items-per-page="generatedFiles.per_page" :total="generatedFiles.total">
+                    <PaginationContent>
+                        <PaginationPrevious
+                            @click="generatedFiles!.current_page > 1 && goToPage(generatedFiles!.current_page - 1)"
+                            :disabled="generatedFiles.current_page === 1" />
+                        <template v-for="(page, index) in paginationPages" :key="index">
+                            <PaginationItem :value="page" :is-active="page === generatedFiles.current_page"
+                                @click="goToPage(page)">
+                                {{ page }}
+                            </PaginationItem>
+                        </template>
+                        <PaginationNext
+                            @click="generatedFiles!.current_page < generatedFiles!.last_page && goToPage(generatedFiles!.current_page + 1)"
+                            :disabled="generatedFiles.current_page === generatedFiles.last_page" />
+                    </PaginationContent>
+                </Pagination>
+            </div>
         </div>
     </div>
 
@@ -301,6 +353,7 @@ const openMissing = (file: FileRow) => {
             </div>
         </DialogContent>
     </Dialog>
-
+    <EditDialog v-if="editSelected" :file="editSelected" v-model:open="editOpen" />
     <!-- <pre>{{ props }}</pre> -->
+
 </template>
