@@ -131,17 +131,19 @@ watch(documentFilter, (value) => {
 })
 
 /* --------------------------
-   CSV Upload
+   SHOWING TEXT
 --------------------------- */
 
-const viewTemplatePlaceholder = () => {
-  router.get(afs.placeholder().url)
+const showingText = () => {
+  const gf = props.generatedFiles
+  if (!gf || (gf.total ?? 0) === 0) return 'Showing 0 to 0 of 0 total clients'
+
+  const from = gf.from ?? 0
+  const to = gf.to ?? 0
+  const total = gf.total ?? 0
+
+  return `Showing ${from} to ${to} of ${total} total clients`
 }
-
-/* --------------------------
-   Missing Dialog
---------------------------- */
-
 </script>
 
 <template>
@@ -213,7 +215,18 @@ const viewTemplatePlaceholder = () => {
           :stats="props.stats"
           :filters="props.filters"
         />
-      </div>      
+
+        <!-- =======================
+             SHOWING TEXT (Above Pagination)
+        ======================== -->
+        <div
+          v-if="props.generatedFiles"
+          class="px-4 py-3 text-sm text-muted-foreground border-t bg-muted/30"
+        >
+          {{ showingText() }}
+        </div>
+
+      </div>
 
     </div>
   </AppLayout>
