@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AfsController;
 use App\Http\Controllers\ClientUserController;
-use App\Http\Controllers\ClientDataController;
+use App\Http\Controllers\HistoryController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -48,6 +48,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/{afs}/edit', [AfsController::class, 'edit'])->name('edit');
         Route::patch('/{afs}', [AfsController::class, 'update'])->name('update');
         Route::delete('/{afs}', [AfsController::class, 'destroy'])->name('destroy');
+    });
+
+     Route::prefix('histories')->name('histories.')->group(function () {
+        Route::get('/', [HistoryController::class, 'index'])->name('index');
     });
 });
 

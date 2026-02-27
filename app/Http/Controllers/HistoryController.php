@@ -4,15 +4,34 @@ namespace App\Http\Controllers;
 
 use App\Models\History;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class HistoryController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $histories = History::latest()->get();
+        $search = trim((string) $request->get('search', ''));
+
+        $histories = History::query()
+            ->with(['user:id,name', 'file:id,original_name'])
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where('field', 'like', "%{$search}%")
+                  ->orWhere('old_value', 'like', "%{$search}%")
+                  ->orWhere('new_value', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return Inertia::render('History/Index', [
+            'histories' => $histories,
+            'filters' => [
+                'search' => $search,
+            ],
+        ]);
     }
 
     /**
