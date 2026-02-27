@@ -6,6 +6,7 @@ import { Button } from '../button';
 import { Label } from '../label';
 import { Input } from '../input';
 import { ref } from 'vue';
+import { Spinner } from '../spinner';
 
 const closeScanner = ref(false);
 
@@ -35,7 +36,7 @@ const submit = () => {
 <template>
     <Dialog v-model:open="closeScanner">
         <DialogTrigger as-child>
-            <Button>Scan </Button>
+            <Button>Import</Button>
         </DialogTrigger>
         <DialogContent>
             <div class="flex flex-col flex-1 gap-4 p-4">
@@ -48,8 +49,8 @@ const submit = () => {
                     {{ form.errors.file }}
                 </div>
 
-                <Button class="bg-blue-500 text-white px-4 py-2 rounded" @click="submit" :disabled="form.processing">
-                    {{ form.processing ? 'Uploading...' : 'Upload' }}
+                <Button class="bg-blue-500 text-white px-4 py-2 rounded flex gap-4" @click="submit" :disabled="form.processing">
+                    <Spinner v-if="form.processing" class="h-4 w-4" /> {{ form.processing ? 'Uploading...' : 'Upload' }}
                 </Button>
 
                 
