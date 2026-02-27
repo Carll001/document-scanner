@@ -1,18 +1,27 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import type { FileRow } from '@/types/paginated-response'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '../dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../dialog'
 import { Button } from '../button'
 import { Input } from '../input'
 import { Label } from '../label'
 import { ScrollArea } from '../scroll-area'
 import { save, regenerate } from '@/routes/afs'
 import InputError from '@/components/InputError.vue'
+import EditConfrimDialog from './EditConfrimDialog.vue'
+import DialogClose from '../dialog/DialogClose.vue'
+import { toast } from 'vue-sonner'
 
-const props = defineProps<{ file: FileRow }>()
+const props = defineProps<{ file: FileRow; open?: boolean }>()
+const emit = defineEmits<{
+    (e: 'update:open', value: boolean): void
+}>()
 
-const open = ref(false)
+const open = computed({
+    get: () => props.open ?? false,
+    set: (value: boolean) => emit('update:open', value),
+})
 
 // The specific list of keys you want to show
 const ALLOWED_KEYS = [
@@ -54,13 +63,6 @@ const filteredKeys = computed(() => {
     return Object.keys(data).filter((k) => allowedNormalized.has(normalizeKey(k)))
 })
 
-const handleSave = () => {
-    form.put(save(props.file.id).url, {
-        preserveScroll: true,
-        preserveState: true,
-    })
-}
-
 const handleSaveAndRegenerate = () => {
     form.put(save(props.file.id).url, {
         preserveScroll: true,
@@ -71,6 +73,7 @@ const handleSaveAndRegenerate = () => {
                 preserveState: true,
                 onSuccess: () => {
                     open.value = false
+                    toast.success('Updated successfully!')
                 },
             })
         },
@@ -114,22 +117,17 @@ const handleSaveAndRegenerate = () => {
       </ScrollArea>
 
       <DialogFooter class="pt-4 border-t flex gap-2 justify-end">
-        <Button type="button" variant="ghost" @click="open = false" :disabled="form.processing">
-          Cancel
-        </Button>
+        <DialogClose>
+          <Button variant="ghost">Cancel</Button>
+        </DialogClose>
 
-        <Button type="button" @click="handleSave" :disabled="form.processing">
-          {{ form.processing ? 'Saving...' : 'Save' }}
-        </Button>
-
-        <Button
-          type="button"
-          class="bg-blue-700 hover:bg-blue-800 text-white"
-          @click="handleSaveAndRegenerate"
+        <EditConfrimDialog
           :disabled="form.processing"
-        >
-          {{ form.processing ? 'Working...' : 'Save and Regenerate' }}
-        </Button>
+          :trigger-text="form.processing ? 'Working...' : 'Save and Regenerate'"
+          title="Are you sure you want to save and regenerate?"
+          description="This will save your updates and regenerate the document."
+          @confirm="handleSaveAndRegenerate"
+        />
       </DialogFooter>
     </DialogContent>
   </Dialog>
