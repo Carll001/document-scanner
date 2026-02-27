@@ -20,13 +20,24 @@ class ClientUserController extends Controller
 
     public function index(Request $request)
     {
-        $search = $request->string('search')->toString();
-        $role = $request->string('role')->toString();
-        $role = in_array($role, ['client', 'registrar'], true) ? $role : '';
+        $search  = $request->string('search')->toString();
+        $role    = $request->string('role')->toString();
+        $role    = in_array($role, ['client', 'registrar'], true) ? $role : null;
         $perPage = (int) $request->input('per_page', 10);
 
-        // ✅ HIDE CURRENTLY LOGGED-IN USER FROM TABLE
-        $users = $this->repo->paginateClients($search, $role, $perPage, Auth::id());
+        $users = User::query()
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($qq) use ($search) {
+                    $qq->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->when($role, fn($q) => $q->where('role', $role))
+            ->where('id', '!=', Auth::id())   // ✅ hide current user
+            ->latest()
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn($user) => (new UserResource($user))->resolve());
 
         return Inertia::render('ClientUsers/Index', [
             'filters' => [
@@ -34,15 +45,7 @@ class ClientUserController extends Controller
                 'role' => $role,
                 'per_page' => $perPage,
             ],
-            'users' => [
-                'data' => UserResource::collection($users->items())->resolve(),
-                'current_page' => $users->currentPage(),
-                'last_page' => $users->lastPage(),
-                'per_page' => $users->perPage(),
-                'total' => $users->total(),
-                'from' => $users->firstItem(),
-                'to' => $users->lastItem(),
-            ],
+            'users' => $users,
         ]);
     }
 
