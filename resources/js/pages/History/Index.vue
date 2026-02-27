@@ -92,35 +92,18 @@ const formatDate = (iso: string) => {
 </script>
 
 <template>
-  <AppLayout>
-    <Head title="History Logs" />
 
-    <div class="p-6 space-y-6 max-w-6xl mx-auto">
-      
+  <Head title="History Logs" />
+  <AppLayout>
+    <div class="flex flex-col flex-1 gap-4 p-4">
       <!-- Header -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div class="flex items-center gap-2">
-            <HistoryIcon class="h-6 w-6" />
-            <h1 class="text-2xl font-bold tracking-tight">History Logs</h1>
-          </div>
-          <p class="text-sm text-muted-foreground">
-            Audit trail ng lahat ng pagbabago.
-          </p>
-        </div>
-
-        <!-- Search -->
+        
         <div class="w-full sm:w-[360px] relative">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            v-model="search"
-            class="pl-9"
-            placeholder="Search field / value..."
-          />
+          <Input v-model="search" class="pl-9" placeholder="Search field / value..." />
         </div>
       </div>
-
-      <Separator />
 
       <!-- Table -->
       <div class="rounded-lg border bg-background overflow-hidden">
@@ -137,11 +120,7 @@ const formatDate = (iso: string) => {
             </TableHeader>
 
             <TableBody>
-              <TableRow
-                v-for="h in props.histories.data"
-                :key="h.id"
-                class="hover:bg-muted/40 transition"
-              >
+              <TableRow v-for="h in props.histories.data" :key="h.id" class="hover:bg-muted/40 transition">
                 <TableCell class="font-medium">
                   {{ h.user?.name ?? 'System' }}
                 </TableCell>
@@ -186,12 +165,8 @@ const formatDate = (iso: string) => {
         </p>
 
         <div class="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            :disabled="prevDisabled"
-            @click="goToPage(props.histories.current_page - 1)"
-          >
+          <Button variant="outline" size="sm" :disabled="prevDisabled"
+            @click="goToPage(props.histories.current_page - 1)">
             <ChevronLeft class="h-4 w-4 mr-1" />
             Prev
           </Button>
@@ -200,12 +175,8 @@ const formatDate = (iso: string) => {
             Page {{ props.histories.current_page }} of {{ props.histories.last_page }}
           </Badge>
 
-          <Button
-            variant="outline"
-            size="sm"
-            :disabled="nextDisabled"
-            @click="goToPage(props.histories.current_page + 1)"
-          >
+          <Button variant="outline" size="sm" :disabled="nextDisabled"
+            @click="goToPage(props.histories.current_page + 1)">
             Next
             <ChevronRight class="h-4 w-4 ml-1" />
           </Button>

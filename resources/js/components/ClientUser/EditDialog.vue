@@ -22,7 +22,7 @@ import { toast } from 'vue-sonner';
 import InputError from '../InputError.vue';
 
 interface Props {
-    userId: number;
+    userId: string;
     userName: string;
     userEmail: string;
     userRole: string;

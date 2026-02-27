@@ -77,14 +77,14 @@ const goToPage = (pageNum: number) => {
     );
 };
 
-const showUser = (id: number) => {
+const showUser = (id: string) => {
     router.visit(usersRoutes.show({id}).url)
 }
 
 </script>
 
 <template>
-    <div class="flex min-h-screen flex-col gap-4 p-4">
+    <div class="flex min-h-screen flex-col gap-4 p-2 border rounded-lg">
         <!-- Table area -->
         <div class="flex-1 overflow-auto max-h-[550px]">
             <Table class="w-full rounded-lg">
@@ -195,13 +195,6 @@ const showUser = (id: number) => {
             :user-name="userToDelete.name"
             @close="userToDelete = null"
         />
-        <!-- <ViewDialog
-            v-if="userToView"
-            :user-id="userToView.id"
-            :user-name="userToView.name"
-            :user-email="userToView.email"
-            :user-role="userToView.role"
-            @close="userToView = null"
-        /> -->
+ 
     </div>
 </template>

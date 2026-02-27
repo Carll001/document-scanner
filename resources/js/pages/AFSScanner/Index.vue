@@ -15,26 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { FileRow, PaginatedResponse } from '@/types/paginated-response'
 
-type FileRow = {
-  id: number
-  company_name: string | null
-  original_name: string | null
-  path: string | null
-  status: 'completed' | 'incomplete' | 'generated' | string
-  created_at?: string
-  missing_fields?: string[] | null
-}
-
-type PaginatedResponse = {
-  data: FileRow[]
-  current_page: number
-  last_page: number
-  per_page: number
-  total: number
-  from: number
-  to: number
-}
 
 const props = defineProps<{
   generatedFiles?: PaginatedResponse
@@ -227,9 +209,9 @@ const printAllCompleted = async () => {
   <Head title="AFS SCANNER" />
 
   <AppLayout>
-    <div class="p-4 space-y-6">
+    <div class="p-4 space-y-4">
       <!-- TOP ACTIONS -->
-      <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <Input v-model="searchQuery" class="w-56" placeholder="Search company, file, status..." />
 

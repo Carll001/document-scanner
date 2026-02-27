@@ -122,55 +122,44 @@ watch(roleFilter, (value) => {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
+
         <Head title="ManageUser" />
 
         <div class="flex flex-1 flex-col gap-4 p-4">
-            <section>
 
-                <div>
-                    <h1>User Management</h1>
-                </div>
-            </section>
-        
             <section>
-                <div class="flex justify-end gap-2">
-
+                <div class="flex  gap-2">
                     <!-- Right Side -->
                     <div class="relative w-64">
-                        <Search
-                            class="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                        />
-                        <Input
-                            v-model="searchQuery"
-                            placeholder="Search..."
-                            class="pr-8"
-                        />
+                        <Search class="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input v-model="searchQuery" placeholder="Search..." class="pr-8" />
                     </div>
+
+
                     <div>
-                    <Select v-model="roleFilter">
-                        <SelectTrigger class="w-[180px]">
-                            <SelectValue placeholder="Filter Role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Roles</SelectLabel>
-                                <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="registrar">Registrar</SelectItem>
-                                <SelectItem value="client">Client</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                        <Select v-model="roleFilter">
+                            <SelectTrigger class="w-[180px]">
+                                <SelectValue placeholder="Filter Role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectLabel>Roles</SelectLabel>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="registrar">Registrar</SelectItem>
+                                    <SelectItem value="client">Client</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <CreateDialog />
                 </div>
-                 <CreateDialog />
-                </div>
+                
             </section>
+
+            
             <section>
                 <div>
-                    <Table
-                        :users="props.users.data"
-                        :pagination="props.users"
-                        :filters="props.filters"
-                    />
+                    <Table :users="props.users.data" :pagination="props.users" :filters="props.filters" />
                 </div>
             </section>
         </div>

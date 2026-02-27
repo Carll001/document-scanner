@@ -15,7 +15,7 @@ import clients from '@/routes/clients';
 import { toast } from 'vue-sonner';
 
 interface Props {
-    userId: number;
+    userId: string;
     userName: string;
 }
 
