@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class File extends Model
 {
 
-    // use HasUuids;
+    use HasUuids;
 
     protected $fillable = [
         'client_id',

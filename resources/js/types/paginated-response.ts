@@ -1,5 +1,5 @@
 export type FileRow = {
-    id: number
+    id: string
     company_name: string | null
     president_name: string | null
     original_name: string | null
