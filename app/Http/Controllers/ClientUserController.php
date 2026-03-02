@@ -23,7 +23,7 @@ class ClientUserController extends Controller
         $search  = $request->string('search')->toString();
         $role    = $request->string('role')->toString();
         $role    = in_array($role, ['client', 'registrar'], true) ? $role : null;
-        $perPage = (int) $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', 20);
 
         $users = User::query()
             ->when($search !== '', function ($q) use ($search) {

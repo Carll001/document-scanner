@@ -260,7 +260,7 @@ const openMissing = (file: FileRow) => {
             </TableBody>
         </Table>
 
-        <div class="mt-6 flex flex-col mx-auto mt-auto gap-4">
+        <div class="mt-6 flex flex-col mx-auto mt-auto gap-4" v-if="(generatedFiles?.data?.length)">
             <p class="text-sm text-muted-foreground text-center">
                 Showing
                 <span class="font-medium text-foreground">

@@ -84,9 +84,9 @@ const showUser = (id: string) => {
 </script>
 
 <template>
-    <div class="flex min-h-screen flex-col gap-4 p-2 border rounded-lg">
+    <div class="flex flex-col p-2 border rounded-lg">
         <!-- Table area -->
-        <div class="flex-1 overflow-auto max-h-[550px]">
+        <div class="flex-1 overflow-auto max-h-[500px]">
             <Table class="w-full rounded-lg">
                 <TableHeader>
                     <TableRow>
@@ -148,7 +148,8 @@ const showUser = (id: string) => {
 
         <!-- Sticky Pagination Footer -->
         <div
-            class="mt-2 flex w-full justify-end gap-4 border-gray-200 p-4"
+            class="mt-2 flex w-full justify-end gap-4 border-gray-200 "
+            v-if="pagination && pagination.last_page > 1"
         >
             <Pagination
                 :items-per-page="props.pagination.per_page"

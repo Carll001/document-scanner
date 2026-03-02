@@ -128,15 +128,13 @@ watch(roleFilter, (value) => {
         <div class="flex flex-1 flex-col gap-4 p-4">
 
             <section>
-                <div class="flex  gap-2">
+                <div class="flex justify-between items-center gap-2">
                     <!-- Right Side -->
-                    <div class="relative w-64">
-                        <Search class="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input v-model="searchQuery" placeholder="Search..." class="pr-8" />
-                    </div>
-
-
-                    <div>
+                    <div class="flex gap-2">
+                        <div class="relative w-64">
+                            <Search class="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input v-model="searchQuery" placeholder="Search..." class="pr-8" />
+                        </div>
                         <Select v-model="roleFilter">
                             <SelectTrigger class="w-[180px]">
                                 <SelectValue placeholder="Filter Role" />
@@ -151,12 +149,15 @@ watch(roleFilter, (value) => {
                             </SelectContent>
                         </Select>
                     </div>
+
+
+                 
                     <CreateDialog />
                 </div>
-                
+
             </section>
 
-            
+
             <section>
                 <div>
                     <Table :users="props.users.data" :pagination="props.users" :filters="props.filters" />
